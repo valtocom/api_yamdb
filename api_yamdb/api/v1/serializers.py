@@ -1,5 +1,6 @@
 import datetime as dt
 
+from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from rest_framework.validators import UniqueTogetherValidator
@@ -59,14 +60,30 @@ class TitleSerializerRead(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
     def get_rating(self, obj):
+        Reviews.objects.score.aggregate(Avg('price'))
         rating = 7
         return rating
 
 
-
 class ReviewSerializer(serializers.ModelSerializer):
-    pass
+    author = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='username',
+    )
+
+    class Meta:
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+        model = Reviews
+        read_only_fields = ('pub_date',)
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    pass
+    author = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='username',
+    )
+
+    class Meta:
+        fields = ('id', 'text', 'author', 'pub_date')
+        model = Comments
+        read_only_fields = ('pub_date',)
