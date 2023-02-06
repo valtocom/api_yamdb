@@ -65,7 +65,7 @@ class TitleSerializerCreate(serializers.ModelSerializer):
         many=True)
 
     class Meta:
-        fields = ('name', 'year', 'description', 'genre', 'category')
+        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
         model = Titles
 
     def validate_year(self, value):
@@ -84,12 +84,12 @@ class TitleSerializerRead(serializers.ModelSerializer):
 
     class Meta:
         model = Titles
-        fields = ('name', 'year', 'description',
-                  'genre', 'category', 'id', 'rating')
+        fields = ('id', 'name', 'year', 'description',
+                  'genre', 'category', 'rating')
         read_only_fields = ('id',)
 
     def get_rating(self, obj):
-        rating = Reviews.objects.all().aggregate(Avg('score'))
+        rating = Reviews.objects.all().aggregate(Avg('score'))["score__avg"]
         return rating
 
 
