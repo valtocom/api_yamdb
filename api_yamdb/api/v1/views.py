@@ -132,6 +132,7 @@ class CategoryViewSet(CreateRetrieveDeleteViewSet):
     pagination_class = PageNumberPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+    lookup_field = 'slug'
 
 
 class GenreViewSet(CreateRetrieveDeleteViewSet):
@@ -143,6 +144,7 @@ class GenreViewSet(CreateRetrieveDeleteViewSet):
     pagination_class = PageNumberPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+    lookup_field = 'slug'
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
