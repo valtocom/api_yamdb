@@ -2,9 +2,41 @@ import datetime as dt
 
 from django.db.models import Avg
 from rest_framework import serializers
-from rest_framework.relations import SlugRelatedField
-from rest_framework.validators import UniqueTogetherValidator
+from rest_framework.validators import UniqueValidator
 
+from reviews.models import Titles, Categories, Genres, Reviews, Comments, User
+
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели User."""
+
+    class Meta:
+        model = User
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+        )
+
+
+class SignupSerializer(serializers.ModelSerializer):
+    """Сериализатор для регистрации пользователей."""
+
+    def validate_username(self, value):
+        if value.lower() == 'me':
+            raise serializers.ValidationError("Username 'me' is not valid")
+        return value
+
+    class Meta:
+        model = User
+        fields = ('username', 'email')
+
+
+class TokenSerializer(serializers.Serializer):
+    """Сериализатор для токена."""
+
+    username = serializers.CharField()
+    confirmation_code = serializers.CharField()
+=======
 from reviews.models import (Titles, Categories, Genres,
                             GenreTitle, Reviews, Comments, User)
 

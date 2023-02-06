@@ -1,9 +1,68 @@
-from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.core import validators
 from django.db import models
 
 
-User = get_user_model()
+class User(AbstractUser):
+    """Модель пользователя."""
+
+    USER = 'user'
+    MODERATOR = 'moderator'
+    ADMIN = 'admin'
+    CHOICES = [
+        ('Administrator', ADMIN),
+        ('Moderator', MODERATOR),
+        ('User', USER)
+    ]
+
+    username = models.CharField(
+        verbose_name='Имя пользователя',
+        max_length=150,
+        unique=True
+    )
+
+    email = models.EmailField(
+        verbose_name='Адрес электронной почты',
+        unique=True,
+        validators=[validators.validate_email]
+    )
+
+    first_name = models.CharField(
+        verbose_name='Имя',
+        max_length=150,
+        null=True,
+    )
+
+    last_name = models.CharField(
+        verbose_name='Фамилия',
+        max_length=150,
+        null=True,
+    )
+
+    bio = models.TextField(
+        verbose_name='О себе',
+        blank=True
+    )
+
+    role = models.CharField(
+        verbose_name='Права пользователя',
+        max_length=50,
+        choices=CHOICES,
+        default=USER
+    )
+
+    def __str__(self):
+        return self.username
+
+    @property
+    def is_admin(self):
+        return self.role == self.ADMIN
+
+    @property
+    def is_moderator(self):
+        return self.role == self.MODERATOR
 
 
 class Categories(models.Model):
