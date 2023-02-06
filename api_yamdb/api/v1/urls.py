@@ -2,7 +2,9 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (TitleViewSet, CategoryViewSet, 
-                    GenreViewSet, ReviewViewSet, CommentViewSet) 
+                    GenreViewSet, ReviewViewSet, CommentViewSet, UserViewSet,
+                    SignupAPIView, TokenAPIView)
+
 
 router = DefaultRouter()
 router.register(r'titles', TitleViewSet, basename="titles")
@@ -18,9 +20,10 @@ router.register(
     CommentViewSet,
     basename='comments',
 )
+router.register(r'users', UserViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    # пока поставил djoser - заменишь на нужный вариант
-    #path('', include('djoser.urls.jwt')),
+    path('auth/signup/', SignupAPIView.as_view(), name='signup'),
+    path('auth/token/', TokenAPIView.as_view(), name='token')
 ]
