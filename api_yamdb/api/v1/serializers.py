@@ -36,9 +36,7 @@ class TokenSerializer(serializers.Serializer):
 
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
-=======
-from reviews.models import (Titles, Categories, Genres,
-                            GenreTitle, Reviews, Comments, User)
+
 
 
 class CategorySerializer(serializers.ModelSerializer):

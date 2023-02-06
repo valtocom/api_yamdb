@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, mixins, viewsets, permissions, status
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.auth.tokens import default_token_generator
@@ -114,6 +114,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('name', 'year', 'description', 'genre')
     permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = PageNumberPagination
 
     def get_serializer_class(self):
         if self.request.method in ('POST', 'PATCH', 'DELETE',):
@@ -128,6 +129,7 @@ class CategoryViewSet(CreateRetrieveDeleteViewSet):
     queryset = Categories.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = PageNumberPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
@@ -138,6 +140,7 @@ class GenreViewSet(CreateRetrieveDeleteViewSet):
     queryset = Genres.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = PageNumberPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
@@ -147,7 +150,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = [
         permissions.IsAuthenticatedOrReadOnly,
     ]
-    pagination_class = LimitOffsetPagination
+    pagination_class = PageNumberPagination
 
     def get_title(self):
         return get_object_or_404(Titles, pk=self.kwargs.get('title_id'))
@@ -172,7 +175,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = [
         permissions.IsAuthenticatedOrReadOnly,
     ]
-    pagination_class = LimitOffsetPagination
+    pagination_class = PageNumberPagination
 
     def get_title(self):
         return get_object_or_404(Titles, pk=self.kwargs.get('title_id'))
