@@ -8,10 +8,11 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.models import Titles, Categories, Genres, Reviews, User
-from .permissions import IsAdminOrReadOnly, IsAdmin
+from .permissions import IsAdminOrReadOnly, IsAdmin, OwnerOrReadOnly
 from .serializers import (TitleSerializerCreate, TitleSerializerRead, CategorySerializer,
                           GenreSerializer, ReviewSerializer, ReviewSerializer, UserSerializer, 
                           SignupSerializer, TokenSerializer, CommentSerializer)
@@ -151,9 +152,7 @@ class GenreViewSet(CreateRetrieveDeleteViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = ([
-        permissions.IsAuthenticatedOrReadOnly,
-    ])
+    permission_classes = (OwnerOrReadOnly, IsAuthenticatedOrReadOnly)
     pagination_class = PageNumberPagination
 
     def get_queryset(self):
@@ -168,9 +167,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = [
-        permissions.IsAuthenticatedOrReadOnly,
-    ]
+    permission_classes = (OwnerOrReadOnly, IsAuthenticatedOrReadOnly)
     pagination_class = PageNumberPagination
 
     def get_title(self):
