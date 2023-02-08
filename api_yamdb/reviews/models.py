@@ -126,7 +126,7 @@ class Reviews(models.Model):
         related_name='reviews',
     )
     score = models.IntegerField(
-        blank=True,
+        blank=True, null = True,
         validators=[
             MinValueValidator(1),
             MaxValueValidator(10),
