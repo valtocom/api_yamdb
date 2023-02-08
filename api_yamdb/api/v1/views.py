@@ -14,7 +14,7 @@ from reviews.models import Titles, Categories, Genres, Reviews, User
 from .permissions import IsAdminOrReadOnly, IsAdmin
 from .serializers import (TitleSerializerCreate, TitleSerializerRead, CategorySerializer,
                           GenreSerializer, ReviewSerializer, ReviewSerializer, UserSerializer, 
-                          SignupSerializer, TokenSerializer)
+                          SignupSerializer, TokenSerializer, CommentSerializer)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -151,31 +151,23 @@ class GenreViewSet(CreateRetrieveDeleteViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = [
+    permission_classes = ([
         permissions.IsAuthenticatedOrReadOnly,
-    ]
+    ])
     pagination_class = PageNumberPagination
 
-    def get_title(self):
-        return get_object_or_404(Titles, pk=self.kwargs.get('title_id'))
-
-    def get_review(self):
-        return get_object_or_404(Reviews, pk=self.kwargs.get('review_id'))
-
     def get_queryset(self):
-        return self.get_title().reviews.select_related('review', 'author')
-
+        title = get_object_or_404(Titles, pk=self.kwargs.get('title_id'))
+        return title.reviews.all()
 
     def perform_create(self, serializer):
-        serializer.save(
-            author=self.request.user,
-            title=self.get_title(),
-            review=self.get_review(),
-        )
+        title_id = self.kwargs.get('title_id')
+        title = get_object_or_404(Titles, id=title_id)
+        serializer.save(author=self.request.user, title=title)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    serializer_class = ReviewSerializer
+    serializer_class = CommentSerializer
     permission_classes = [
         permissions.IsAuthenticatedOrReadOnly,
     ]
@@ -189,7 +181,6 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return self.get_review().comments.select_related('title', 'author')
-
 
     def perform_create(self, serializer):
         serializer.save(
