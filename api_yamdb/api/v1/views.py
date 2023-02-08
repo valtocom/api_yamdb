@@ -1,4 +1,3 @@
-from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, mixins, viewsets, permissions, status
 from django_filters.rest_framework import DjangoFilterBackend
@@ -23,23 +22,25 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdmin,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
     lookup_field = 'username'
 
     @action(
-        methods=[
-            'get',
-            'patch',
-        ],
+        methods=['get', 'patch'],
         detail=False,
         url_path='me',
         permission_classes=[permissions.IsAuthenticated],
-        serializer_class=UserSerializer,
+        serializer_class = UserSerializer
     )
+
     def users_own_profile(self, request):
         user = request.user
+        
         if request.method == 'GET':
             serializer = self.get_serializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
+            
         if request.method == 'PATCH':
             serializer = self.get_serializer(
                 user,
@@ -54,18 +55,23 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class SignupAPIView(APIView):
 
-    queryset = get_user_model()
     permission_classes = (AllowAny,)
 
     def post(self, request):
+        username = request.data.get('username')
+        email = request.data.get('email')
+
+        if User.objects.filter(
+                username=username,
+                email=email
+        ).exists():
+            return Response(request.data, status=status.HTTP_200_OK)
+
         serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        user = get_object_or_404(
-        User,
-        username=serializer.validated_data['username']
-    )
+        user = get_object_or_404(User)
         confirmation_code = default_token_generator.make_token(user)
         send_mail(
             subject='YaMDb registration',
@@ -73,7 +79,6 @@ class SignupAPIView(APIView):
             from_email=None,
             recipient_list=[user.email],
         )
-
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -84,12 +89,8 @@ class TokenAPIView(APIView):
     def post(self, request):
         serializer = TokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        user = get_object_or_404(
-            User,
-            username=serializer.validated_data['username']
-        )
-
+        user = get_object_or_404(User)
+        
         if default_token_generator.check_token(
             user, serializer.validated_data['confirmation_code']
         ):

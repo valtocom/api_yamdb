@@ -1,8 +1,8 @@
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.core import validators
 from django.db import models
+from django.core import validators
 
 
 class User(AbstractUser):
@@ -20,13 +20,13 @@ class User(AbstractUser):
     username = models.CharField(
         verbose_name='Имя пользователя',
         max_length=150,
-        unique=True
+        unique=True,
+        validators=[validators.validate_slug]
     )
 
     email = models.EmailField(
         verbose_name='Адрес электронной почты',
         unique=True,
-        validators=[validators.validate_email]
     )
 
     first_name = models.CharField(
