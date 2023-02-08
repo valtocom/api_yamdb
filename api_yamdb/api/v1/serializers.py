@@ -2,8 +2,10 @@ import datetime as dt
 
 from django.db.models import Avg
 from rest_framework import serializers
+from rest_framework.generics import get_object_or_404
+from rest_framework.exceptions import ValidationError
 
-from reviews.models import Titles, Categories, Genres, Reviews, Comments, User
+from reviews.models import Title, Categories, Genres, Review, Comments, User
 
 
 
@@ -65,7 +67,7 @@ class TitleSerializerCreate(serializers.ModelSerializer):
 
     class Meta:
         fields = ('id', 'name', 'year', 'description', 'genre', 'category')
-        model = Titles
+        model = Title
 
     def validate_year(self, value):
         year = dt.date.today().year
@@ -82,13 +84,13 @@ class TitleSerializerRead(serializers.ModelSerializer):
     rating = serializers.SerializerMethodField()
 
     class Meta:
-        model = Titles
+        model = Title
         fields = ('id', 'name', 'year', 'description',
                   'genre', 'category', 'rating')
         read_only_fields = ('id',)
 
     def get_rating(self, obj):
-        rating = Reviews.objects.all().aggregate(Avg('score'))["score__avg"]
+        rating = Review.objects.all().aggregate(Avg('score'))["score__avg"]
         return rating
 
 
@@ -100,8 +102,19 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('id', 'text', 'title', 'author', 'score', 'pub_date')
-        model = Reviews
+        model = Review
         read_only_fields = ('title', 'author',)
+    
+    def validate(self, data):
+        author = self.context['request'].user
+        title_id = self.context['view'].kwargs.get('title_id')
+        title = get_object_or_404(Title, pk=title_id)
+        if self.context['request'].method == 'POST':
+            if title.reviews.select_related('title').filter(author=author):
+                raise ValidationError(
+                    'You have already written a review on this title!'
+                )
+        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):

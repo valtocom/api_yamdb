@@ -1,3 +1,4 @@
+import django_filters
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, mixins, viewsets, permissions, status
 from django_filters.rest_framework import DjangoFilterBackend
@@ -11,7 +12,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework_simplejwt.tokens import AccessToken
 
-from reviews.models import Titles, Categories, Genres, Reviews, User
+from reviews.models import Title, Categories, Genres, Review, User
 from .permissions import IsAdminOrReadOnly, IsAdmin, OwnerOrReadOnly
 from .serializers import (TitleSerializerCreate, TitleSerializerRead, CategorySerializer,
                           GenreSerializer, ReviewSerializer, ReviewSerializer, UserSerializer, 
@@ -108,13 +109,28 @@ class CreateRetrieveDeleteViewSet(mixins.CreateModelMixin,
     pass 
 
 
+class TitleFilter(django_filters.FilterSet):
+    '''Позволяет осуществлять поиск не по id, а 
+    по полю slug.'''
+    name = django_filters.CharFilter(
+        field_name='name', lookup_expr='icontains'
+    )
+    year = django_filters.NumberFilter(field_name='year')
+    genre = django_filters.CharFilter(field_name='genre__slug')
+    category = django_filters.CharFilter(field_name='category__slug')
+
+    class Meta:
+        model = Title
+        fields = ['name', 'year', 'genre', 'category']
+
 class TitleViewSet(viewsets.ModelViewSet):
     '''Вьюсет для передачи и получения информации о
-    модели Titles. Создает и удаляет админ.
+    модели Title. Создает и удаляет админ.
     Нет методов retrieve и update.'''
-    queryset = Titles.objects.all()
+    queryset = Title.objects.all()
     serializer_class = TitleSerializerRead
     filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
     filterset_fields = ('name', 'year', 'description', 'genre')
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = PageNumberPagination
@@ -156,12 +172,12 @@ class ReviewViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
 
     def get_queryset(self):
-        title = get_object_or_404(Titles, pk=self.kwargs.get('title_id'))
+        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
         return title.reviews.all()
 
     def perform_create(self, serializer):
         title_id = self.kwargs.get('title_id')
-        title = get_object_or_404(Titles, id=title_id)
+        title = get_object_or_404(Title, id=title_id)
         serializer.save(author=self.request.user, title=title)
 
 
@@ -171,10 +187,10 @@ class CommentViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
 
     def get_title(self):
-        return get_object_or_404(Titles, pk=self.kwargs.get('title_id'))
+        return get_object_or_404(Title, pk=self.kwargs.get('title_id'))
     
     def get_review(self):
-        return get_object_or_404(Reviews, pk=self.kwargs.get('review_id'))
+        return get_object_or_404(Review, pk=self.kwargs.get('review_id'))
 
     def get_queryset(self):
         return self.get_review().comments.select_related('title', 'author')

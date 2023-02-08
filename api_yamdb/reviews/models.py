@@ -66,7 +66,7 @@ class User(AbstractUser):
 
 
 class Categories(models.Model):
-    '''Модель для работы с категориями Titles
+    '''Модель для работы с категориями Title
     (список категорий создают админы)'''
     name = models.CharField(max_length=256)
     slug = models.SlugField(unique=True, max_length=50)
@@ -76,7 +76,7 @@ class Categories(models.Model):
 
 
 class Genres(models.Model):
-    '''Модель для работы с жанрами Titles
+    '''Модель для работы с жанрами Title
     (список категорий создают админы)'''
     name = models.CharField(max_length=256)
     slug = models.SlugField(unique=True, max_length=50)
@@ -85,7 +85,7 @@ class Genres(models.Model):
         return self.slug   
 
 
-class Titles(models.Model):
+class Title(models.Model):
     '''Модель для работы с произведениями
     (вносить новые могут админы)'''
     name = models.CharField(max_length=256)
@@ -104,17 +104,17 @@ class GenreTitle(models.Model):
     '''Модель для объединения жанров с произведениями
     (создается автоматически)'''    
     genre = models.ForeignKey(Genres, on_delete=models.CASCADE)
-    title = models.ForeignKey(Titles, on_delete=models.CASCADE)
+    title = models.ForeignKey(Title, on_delete=models.CASCADE)
 
     def __str__(self):
         return f'{self.genre} {self.title}'
 
 
-class Reviews(models.Model):
+class Review(models.Model):
     '''Модель для работы с отзывами
     (Писать могут пользователи, модераторы и админы)'''
     title = models.ForeignKey(
-        Titles,
+        Title,
         null=True,
         on_delete=models.CASCADE,
         related_name='reviews',
@@ -126,7 +126,6 @@ class Reviews(models.Model):
         related_name='reviews',
     )
     score = models.IntegerField(
-        blank=True, null = True,
         validators=[
             MinValueValidator(1),
             MaxValueValidator(10),
@@ -138,6 +137,15 @@ class Reviews(models.Model):
         db_index=True,
     )
 
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'title'],
+                name='unique_review'
+            )
+        ]
+
     def __str__(self):
         return self.text
 
@@ -146,13 +154,13 @@ class Comments(models.Model):
     '''Модель для работы с отзывами
     (Писать могут пользователи, модераторы и админы)'''
     title = models.ForeignKey(
-        Titles,
+        Title,
         null=True,
         on_delete=models.CASCADE,
         related_name='comments',
     )
     review = models.ForeignKey(
-        Reviews,
+        Review,
         on_delete=models.CASCADE,
         related_name='comments',
     )

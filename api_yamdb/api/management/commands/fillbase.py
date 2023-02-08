@@ -4,7 +4,7 @@ import os
 from django.core.management.base import BaseCommand
 
 from reviews.models import (
-    Categories, Genres, GenreTitle, Titles, Reviews, Comments, User)
+    Categories, Genres, GenreTitle, Title, Review, Comments, User)
 
 
 class Command(BaseCommand):
@@ -35,13 +35,13 @@ class Command(BaseCommand):
                         id=item[0], name=item[1], slug=item[2])
 
     def fill_title(self):
-        """Заполнение модели Titles"""
+        """Заполнение модели Title"""
         with open(os.path.join('static/data/titles.csv'),
                   'r', encoding='utf-8') as csv_file:
             data = csv.reader(csv_file)
             for item in data:
                 if item[0] != 'id':
-                    Titles.objects.get_or_create(
+                    Title.objects.get_or_create(
                         id=item[0], name=item[1],
                         year=item[2], category_id=item[3])
 
@@ -56,13 +56,13 @@ class Command(BaseCommand):
                         id=item[0], title_id=item[1], genre_id=item[2])
 
     def fill_review(self):
-        """Заполнение модели Reviews"""
+        """Заполнение модели Review"""
         with open(os.path.join('static/data/review.csv'),
                   'r', encoding='utf-8') as csv_file:
             data = csv.reader(csv_file)
             for item in data:
                 if item[0] != 'id':
-                    Reviews.objects.get_or_create(
+                    Review.objects.get_or_create(
                         id=item[0], title_id=item[1],
                         text=item[2], author_id=item[3],
                         score=item[4], pub_date=item[5])
