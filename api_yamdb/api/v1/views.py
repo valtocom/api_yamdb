@@ -22,6 +22,7 @@ from .serializers import (TitleSerializerCreate, TitleSerializerRead, CategorySe
 class UserViewSet(viewsets.ModelViewSet):
 
     queryset = User.objects.all()
+    http_method_names = ['patch', 'get', 'post', 'delete']
     serializer_class = UserSerializer
     permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)

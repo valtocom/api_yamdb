@@ -13,11 +13,11 @@ class UserSerializer(serializers.ModelSerializer):
     """Сериализатор для модели User."""
 
     class Meta:
+        role = serializers.CharField(default='user')
         model = User
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
         )
-        read_only_fields = ('role',)
 
 
 class SignupSerializer(serializers.ModelSerializer):

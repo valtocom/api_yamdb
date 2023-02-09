@@ -12,9 +12,9 @@ class User(AbstractUser):
     MODERATOR = 'moderator'
     ADMIN = 'admin'
     CHOICES = [
-        ('Administrator', ADMIN),
-        ('Moderator', MODERATOR),
-        ('User', USER)
+        ('administrator', ADMIN),
+        ('moderator', MODERATOR),
+        ('user', USER)
     ]
 
     username = models.CharField(
