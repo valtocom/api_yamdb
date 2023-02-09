@@ -8,13 +8,14 @@ from django.core import validators
 class User(AbstractUser):
     """Модель пользователя."""
 
-    USER = 'user'
-    MODERATOR = 'moderator'
     ADMIN = 'admin'
+    MODERATOR = 'moderator'
+    USER = 'user'
+
     CHOICES = [
-        ('administrator', ADMIN),
+        ('admin', ADMIN),
         ('moderator', MODERATOR),
-        ('user', USER)
+        ('user', USER),
     ]
 
     username = models.CharField(
@@ -50,7 +51,7 @@ class User(AbstractUser):
         verbose_name='Права пользователя',
         max_length=50,
         choices=CHOICES,
-        default=USER
+        default=USER,
     )
 
     def __str__(self):
@@ -76,18 +77,18 @@ class Categories(models.Model):
 
 
 class Genres(models.Model):
-    '''Модель для работы с жанрами Title
-    (список категорий создают админы)'''
+    """Модель для работы с жанрами Title
+    (список категорий создают админы)."""
     name = models.CharField(max_length=256)
     slug = models.SlugField(unique=True, max_length=50)
 
     def __str__(self):
-        return self.slug   
+        return self.slug
 
 
 class Title(models.Model):
-    '''Модель для работы с произведениями
-    (вносить новые могут админы)'''
+    """Модель для работы с произведениями
+    (вносить новые могут админы)."""
     name = models.CharField(max_length=256)
     year = models.IntegerField()
     description = models.TextField(blank=True, null=True)
@@ -101,8 +102,8 @@ class Title(models.Model):
 
 
 class GenreTitle(models.Model):
-    '''Модель для объединения жанров с произведениями
-    (создается автоматически)'''    
+    """Модель для объединения жанров с произведениями
+    (создается автоматически)."""
     genre = models.ForeignKey(Genres, on_delete=models.CASCADE)
     title = models.ForeignKey(Title, on_delete=models.CASCADE)
 
@@ -111,15 +112,15 @@ class GenreTitle(models.Model):
 
 
 class Review(models.Model):
-    '''Модель для работы с отзывами
-    (Писать могут пользователи, модераторы и админы)'''
+    """Модель для работы с отзывами
+    (Писать могут пользователи, модераторы и админы)."""
     title = models.ForeignKey(
         Title,
         null=True,
         on_delete=models.CASCADE,
         related_name='reviews',
     )
-    text = models.TextField(blank=True, null = True)
+    text = models.TextField(blank=True, null=True)
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -137,7 +138,6 @@ class Review(models.Model):
         db_index=True,
     )
 
-
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -149,10 +149,10 @@ class Review(models.Model):
     def __str__(self):
         return self.text
 
-    
+
 class Comments(models.Model):
-    '''Модель для работы с отзывами
-    (Писать могут пользователи, модераторы и админы)'''
+    """Модель для работы с отзывами
+    (Писать могут пользователи, модераторы и админы)."""
     title = models.ForeignKey(
         Title,
         null=True,

@@ -1,28 +1,30 @@
 import django_filters
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, mixins, viewsets, permissions, status
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
+from rest_framework import filters, mixins, viewsets, status
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (IsAuthenticatedOrReadOnly,
+                                        IsAuthenticated)
 from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.models import Title, Categories, Genres, Review, User
 from .permissions import IsAdminOrReadOnly, IsAdmin, OwnerOrReadOnly
-from .serializers import (TitleSerializerCreate, TitleSerializerRead, CategorySerializer,
-                          GenreSerializer, ReviewSerializer, ReviewSerializer, UserSerializer, 
+from .serializers import (TitleSerializerCreate, TitleSerializerRead,
+                          CategorySerializer, GenreSerializer,
+                          ReviewSerializer, ReviewSerializer, UserSerializer,
                           SignupSerializer, TokenSerializer, CommentSerializer)
 
 
 class UserViewSet(viewsets.ModelViewSet):
-
+    """Вьюсет для отображения пользователей."""
     queryset = User.objects.all()
-    http_method_names = ['patch', 'get', 'post', 'delete']
+    http_method_names = ['patch', 'get', 'post', 'delete', 'head']
     serializer_class = UserSerializer
     permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
@@ -30,34 +32,31 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
 
     @action(
-        methods=['get', 'patch'],
+        methods=['patch', 'get'],
         detail=False,
         url_path='me',
-        permission_classes=[permissions.IsAuthenticated],
-        serializer_class = UserSerializer
+        permission_classes=[IsAuthenticated, ],
+        serializer_class=UserSerializer,
     )
-
     def users_own_profile(self, request):
-        user = request.user
-        
         if request.method == 'GET':
-            serializer = self.get_serializer(user)
+            serializer = self.get_serializer(request.user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-            
+
         if request.method == 'PATCH':
             serializer = self.get_serializer(
-                user,
+                request.user,
                 data=request.data,
                 partial=True
             )
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            serializer.save(role=request.user.role)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class SignupAPIView(APIView):
-
+    """Вьюсет для регистрации и отправки на email."""
     permission_classes = (AllowAny,)
 
     def post(self, request):
@@ -86,14 +85,13 @@ class SignupAPIView(APIView):
 
 
 class TokenAPIView(APIView):
-
+    """Вьюсет для подтверждения доступа."""
     permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = TokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = get_object_or_404(User)
-        
         if default_token_generator.check_token(
             user, serializer.validated_data['confirmation_code']
         ):
@@ -103,16 +101,16 @@ class TokenAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CreateRetrieveDeleteViewSet(mixins.CreateModelMixin, 
+class CreateRetrieveDeleteViewSet(mixins.CreateModelMixin,
                                   mixins.ListModelMixin,
                                   mixins.DestroyModelMixin,
                                   viewsets.GenericViewSet):
-    pass 
+    pass
 
 
 class TitleFilter(django_filters.FilterSet):
-    '''Позволяет осуществлять поиск не по id, а 
-    по полю slug.'''
+    """Позволяет осуществлять поиск не по id,
+    а по полю slug."""
     name = django_filters.CharFilter(
         field_name='name', lookup_expr='icontains'
     )
@@ -124,10 +122,11 @@ class TitleFilter(django_filters.FilterSet):
         model = Title
         fields = ['name', 'year', 'genre', 'category']
 
+
 class TitleViewSet(viewsets.ModelViewSet):
-    '''Вьюсет для передачи и получения информации о
+    """Вьюсет для передачи и получения информации о
     модели Title. Создает и удаляет админ.
-    Нет методов retrieve и update.'''
+    Нет методов retrieve и update."""
     queryset = Title.objects.all()
     serializer_class = TitleSerializerRead
     filter_backends = (DjangoFilterBackend,)
@@ -143,9 +142,9 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 
 class CategoryViewSet(CreateRetrieveDeleteViewSet):
-    '''Вьюсет для передачи и получения информации о
+    """Вьюсет для передачи и получения информации о
     модели Categories. Создает и удаляет админ.
-    Нет методов retrieve и update.'''
+    Нет методов retrieve и update."""
     queryset = Categories.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
@@ -156,8 +155,8 @@ class CategoryViewSet(CreateRetrieveDeleteViewSet):
 
 
 class GenreViewSet(CreateRetrieveDeleteViewSet):
-    '''Вьюсет для передачи и получения информации о
-    модели Genres. Изменения вносит админ.'''
+    """Вьюсет для передачи и получения информации о
+    модели Genres. Изменения вносит админ."""
     queryset = Genres.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
@@ -168,6 +167,7 @@ class GenreViewSet(CreateRetrieveDeleteViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    """Вьюсет для отзывов."""
     serializer_class = ReviewSerializer
     permission_classes = (OwnerOrReadOnly, IsAuthenticatedOrReadOnly)
     pagination_class = PageNumberPagination
@@ -183,13 +183,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """Вьюсет для комментариев."""
     serializer_class = CommentSerializer
     permission_classes = (OwnerOrReadOnly, IsAuthenticatedOrReadOnly)
     pagination_class = PageNumberPagination
 
     def get_title(self):
         return get_object_or_404(Title, pk=self.kwargs.get('title_id'))
-    
+
     def get_review(self):
         return get_object_or_404(Review, pk=self.kwargs.get('review_id'))
 

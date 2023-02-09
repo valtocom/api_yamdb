@@ -8,12 +8,9 @@ from rest_framework.exceptions import ValidationError
 from reviews.models import Title, Categories, Genres, Review, Comments, User
 
 
-
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор для модели User."""
-
     class Meta:
-        role = serializers.CharField(default='user')
         model = User
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
@@ -22,7 +19,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 class SignupSerializer(serializers.ModelSerializer):
     """Сериализатор для регистрации пользователей."""
-
     class Meta:
         model = User
         fields = ('username', 'email')
@@ -35,28 +31,27 @@ class SignupSerializer(serializers.ModelSerializer):
 
 class TokenSerializer(serializers.Serializer):
     """Сериализатор для токена."""
-
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    '''Сериализатор для объектов Categories. Включает все поля. '''
+    """Сериализатор для объектов Categories. Включает все поля."""
     class Meta:
         fields = ('name', 'slug')
         model = Categories
 
 
 class GenreSerializer(serializers.ModelSerializer):
-    '''Сериализатор для объектов Genres. Включает все поля. '''
+    """Сериализатор для объектов Genres. Включает все поля."""
     class Meta:
         fields = ('name', 'slug')
         model = Genres
 
 
 class TitleSerializerCreate(serializers.ModelSerializer):
-    '''Сериализатор для объектов Title при создании.
-    Проводит проверку на коррегдность года создания'''
+    """Сериализатор для объектов Title при создании.
+    Проводит проверку на коррегдность года создания."""
     category = serializers.SlugRelatedField(
         queryset=Categories.objects.all(),
         slug_field='slug')
@@ -78,7 +73,7 @@ class TitleSerializerCreate(serializers.ModelSerializer):
 
 class TitleSerializerRead(serializers.ModelSerializer):
     """Сериализатор для работы с произведениями при чтении.
-    Высчитывает отдельное поле - рейтинг произведения"""
+    Высчитывает отдельное поле - рейтинг произведения."""
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(many=True, read_only=True)
     rating = serializers.SerializerMethodField()
@@ -95,6 +90,7 @@ class TitleSerializerRead(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    """Сериализатор для отзывов."""
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username',
@@ -104,7 +100,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ('id', 'text', 'title', 'author', 'score', 'pub_date')
         model = Review
         read_only_fields = ('title', 'author',)
-    
+
     def validate(self, data):
         author = self.context['request'].user
         title_id = self.context['view'].kwargs.get('title_id')
@@ -118,6 +114,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    """Сериализатор для комментариев."""
     author = serializers.SlugRelatedField(
         read_only=True,
         slug_field='username',
