@@ -23,7 +23,7 @@ class Command(BaseCommand):
                 if item[0] != 'id':
                     Categories.objects.get_or_create(
                         id=item[0], name=item[1], slug=item[2])
-  
+
     def fill_genre(self):
         """Заполнение модели Genres"""
         with open(os.path.join('static/data/genre.csv'),
