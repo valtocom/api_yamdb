@@ -1,3 +1,4 @@
+import os
 from datetime import timedelta
 from pathlib import Path
 
@@ -23,10 +24,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',
     'django_filters',
     'api',
     'reviews',
-    'rest_framework_simplejwt',
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -126,4 +128,7 @@ SIMPLE_JWT = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'reviews.User'
+AUTH_USER_MODEL = 'users.User'
+
+EMAIL_HOST = 'user.yandex.ru'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')

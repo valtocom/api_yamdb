@@ -4,7 +4,8 @@ import os
 from django.core.management.base import BaseCommand
 
 from reviews.models import (
-    Categories, Genres, GenreTitle, Title, Review, Comments, User)
+    Categories, Genres, GenreTitle, Title, Review, Comments, User
+)
 
 
 class Command(BaseCommand):
@@ -16,81 +17,96 @@ class Command(BaseCommand):
 
     def fill_category(self):
         """Заполнение модели Categories"""
-        with open(os.path.join('static/data/category.csv'),
-                  'r', encoding='utf-8') as csv_file:
-            data = csv.reader(csv_file)
+        with open(
+            os.path.join('static/data/category.csv'),
+            'r', encoding='utf-8'
+        ) as csv_file:
+            data = csv.DictReader(csv_file)
             for item in data:
-                if item[0] != 'id':
-                    Categories.objects.get_or_create(
-                        id=item[0], name=item[1], slug=item[2])
+                Categories.objects.get_or_create(
+                    id=item['id'], name=item['name'], slug=item['slug']
+                )
 
     def fill_genre(self):
         """Заполнение модели Genres"""
-        with open(os.path.join('static/data/genre.csv'),
-                  'r', encoding='utf-8') as csv_file:
-            data = csv.reader(csv_file)
+        with open(
+            os.path.join('static/data/category.csv'),
+            'r', encoding='utf-8'
+        ) as csv_file:
+            data = csv.DictReader(csv_file)
             for item in data:
-                if item[0] != 'id':
-                    Genres.objects.get_or_create(
-                        id=item[0], name=item[1], slug=item[2])
+                Genres.objects.get_or_create(
+                    id=item['id'], name=item['name'], slug=item['slug']
+                )
 
     def fill_title(self):
         """Заполнение модели Title"""
-        with open(os.path.join('static/data/titles.csv'),
-                  'r', encoding='utf-8') as csv_file:
-            data = csv.reader(csv_file)
+        with open(
+            os.path.join('static/data/category.csv'),
+            'r', encoding='utf-8'
+        ) as csv_file:
+            data = csv.DictReader(csv_file)
             for item in data:
-                if item[0] != 'id':
-                    Title.objects.get_or_create(
-                        id=item[0], name=item[1],
-                        year=item[2], category_id=item[3])
+                Title.objects.get_or_create(
+                    id=item['id'], name=item['name'],
+                    year=item['year'], category_id=item['category_id']
+                )
 
     def fill_genre_title(self):
         """Заполнение модели GenreTitle"""
-        with open(os.path.join('static/data/genre_title.csv'),
-                  'r', encoding='utf-8') as csv_file:
-            data = csv.reader(csv_file)
+        with open(
+            os.path.join('static/data/category.csv'),
+            'r', encoding='utf-8'
+        ) as csv_file:
+            data = csv.DictReader(csv_file)
             for item in data:
-                if item[0] != 'id':
-                    GenreTitle.objects.get_or_create(
-                        id=item[0], title_id=item[1], genre_id=item[2])
+                GenreTitle.objects.get_or_create(
+                    id=item['id'], title_id=item['title_id'],
+                    genre_id=item['genre_id']
+                )
 
     def fill_review(self):
         """Заполнение модели Review"""
-        with open(os.path.join('static/data/review.csv'),
-                  'r', encoding='utf-8') as csv_file:
-            data = csv.reader(csv_file)
+        with open(
+            os.path.join('static/data/category.csv'),
+            'r', encoding='utf-8'
+        ) as csv_file:
+            data = csv.DictReader(csv_file)
             for item in data:
-                if item[0] != 'id':
-                    Review.objects.get_or_create(
-                        id=item[0], title_id=item[1],
-                        text=item[2], author_id=item[3],
-                        score=item[4], pub_date=item[5])
+                Review.objects.get_or_create(
+                    id=item['id'], title_id=item['title_id'],
+                    text=item['text'], author_id=item['author_id'],
+                    score=item['score'], pub_date=item['pub_date']
+                )
 
     def fill_comment(self):
         """Заполнение модели Comments"""
-        with open(os.path.join('static/data/comments.csv'),
-                  'r', encoding='utf-8') as csv_file:
-            data = csv.reader(csv_file)
+        with open(
+            os.path.join('static/data/category.csv'),
+            'r', encoding='utf-8'
+        ) as csv_file:
+            data = csv.DictReader(csv_file)
             for item in data:
-                if item[0] != 'id':
-                    Comments.objects.get_or_create(
-                        id=item[0], review_id=item[1],
-                        text=item[2], author_id=item[3],
-                        pub_date=item[4])
+                Comments.objects.get_or_create(
+                    id=item['id'], review_id=item['review_id'],
+                    text=item['text'], author_id=item['author_id'],
+                    pub_date=item['pub_date']
+                )
 
     def fill_user(self):
         """Заполнение модели User"""
-        with open(os.path.join('static/data/users.csv'),
-                  'r', encoding='utf-8') as csv_file:
-            data = csv.reader(csv_file)
+        with open(
+            os.path.join('static/data/category.csv'),
+            'r', encoding='utf-8'
+        ) as csv_file:
+            data = csv.DictReader(csv_file)
             for item in data:
-                if item[0] != 'id':
-                    User.objects.get_or_create(
-                        id=item[0], username=item[1],
-                        email=item[2], role=item[3],
-                        bio=item[4], first_name=item[5],
-                        last_name=item[6])
+                User.objects.get_or_create(
+                    id=item['id'], username=item['username'],
+                    email=item['email'], role=item['role'],
+                    bio=item['bio'], first_name=item['first_name'],
+                    last_name=item['last_name']
+                )
 
     def handle(self, *args, **options):
         self.fill_category()

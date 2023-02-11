@@ -1,11 +1,11 @@
 import datetime as dt
 
-from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 from rest_framework.exceptions import ValidationError
 
-from reviews.models import Title, Categories, Genres, Review, Comments, User
+from users.models import User
+from reviews.models import Title, Categories, Genres, Review, Comments
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -54,11 +54,13 @@ class TitleSerializerCreate(serializers.ModelSerializer):
     Проводит проверку на коррегдность года создания."""
     category = serializers.SlugRelatedField(
         queryset=Categories.objects.all(),
-        slug_field='slug')
+        slug_field='slug'
+    )
     genre = serializers.SlugRelatedField(
         queryset=Genres.objects.all(),
         slug_field='slug',
-        many=True)
+        many=True
+    )
 
     class Meta:
         fields = ('id', 'name', 'year', 'description', 'genre', 'category')
@@ -76,17 +78,17 @@ class TitleSerializerRead(serializers.ModelSerializer):
     Высчитывает отдельное поле - рейтинг произведения."""
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(many=True, read_only=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.IntegerField(
+        source='reviews__score__avg', read_only=True
+    )
 
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'description',
-                  'genre', 'category', 'rating')
+        fields = (
+            'id', 'name', 'year', 'description',
+            'genre', 'category', 'rating'
+        )
         read_only_fields = ('id',)
-
-    def get_rating(self, obj):
-        rating = Review.objects.all().aggregate(Avg('score'))["score__avg"]
-        return rating
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -106,7 +108,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         title_id = self.context['view'].kwargs.get('title_id')
         title = get_object_or_404(Title, pk=title_id)
         if self.context['request'].method == 'POST':
-            if title.reviews.select_related('title').filter(author=author):
+            if Review.objects.filter(title=title, author=author).exists():
                 raise ValidationError(
                     'You have already written a review on this title!'
                 )

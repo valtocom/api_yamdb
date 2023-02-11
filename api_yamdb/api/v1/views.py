@@ -1,24 +1,31 @@
-import django_filters
 from django.contrib.auth.tokens import default_token_generator
+from django.conf import settings
 from django.core.mail import send_mail
+from django.db import IntegrityError
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import filters, mixins, viewsets, status
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
-from rest_framework.permissions import (IsAuthenticatedOrReadOnly,
-                                        IsAuthenticated)
+from rest_framework.permissions import (
+    IsAuthenticatedOrReadOnly, IsAuthenticated
+)
 from rest_framework_simplejwt.tokens import AccessToken
 
-from reviews.models import Title, Categories, Genres, Review, User
+from users.models import User
+from reviews.models import Title, Categories, Genres, Review
 from .permissions import IsAdminOrReadOnly, IsAdmin, OwnerOrReadOnly
-from .serializers import (TitleSerializerCreate, TitleSerializerRead,
-                          CategorySerializer, GenreSerializer,
-                          ReviewSerializer, ReviewSerializer, UserSerializer,
-                          SignupSerializer, TokenSerializer, CommentSerializer)
+from .serializers import (
+    TitleSerializerCreate, TitleSerializerRead, CategorySerializer,
+    GenreSerializer, ReviewSerializer, ReviewSerializer, UserSerializer,
+    SignupSerializer, TokenSerializer, CommentSerializer
+)
+from .filters import TitleFilter
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -73,12 +80,16 @@ class SignupAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        user = get_object_or_404(User)
+        try:
+            user, created = User.objects.get_or_create(serializer.data)
+        except IntegrityError:
+            raise ValidationError('Неверные данные для входа')
+
         confirmation_code = default_token_generator.make_token(user)
         send_mail(
             subject='YaMDb registration',
             message=f'Your confirmation code: {confirmation_code}',
-            from_email=None,
+            from_email=settings.EMAIL_HOST_USER,
             recipient_list=[user.email],
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -101,33 +112,22 @@ class TokenAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CreateRetrieveDeleteViewSet(mixins.CreateModelMixin,
-                                  mixins.ListModelMixin,
-                                  mixins.DestroyModelMixin,
-                                  viewsets.GenericViewSet):
+class CreateRetrieveDeleteViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
     pass
-
-
-class TitleFilter(django_filters.FilterSet):
-    """Позволяет осуществлять поиск не по id,
-    а по полю slug."""
-    name = django_filters.CharFilter(
-        field_name='name', lookup_expr='icontains'
-    )
-    year = django_filters.NumberFilter(field_name='year')
-    genre = django_filters.CharFilter(field_name='genre__slug')
-    category = django_filters.CharFilter(field_name='category__slug')
-
-    class Meta:
-        model = Title
-        fields = ['name', 'year', 'genre', 'category']
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     """Вьюсет для передачи и получения информации о
     модели Title. Создает и удаляет админ.
     Нет методов retrieve и update."""
-    queryset = Title.objects.all()
+    queryset = Title.objects.all().annotate(
+        Avg('reviews__score')
+    )
     serializer_class = TitleSerializerRead
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
@@ -188,18 +188,21 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = (OwnerOrReadOnly, IsAuthenticatedOrReadOnly)
     pagination_class = PageNumberPagination
 
-    def get_title(self):
+    def _get_title(self):
         return get_object_or_404(Title, pk=self.kwargs.get('title_id'))
 
-    def get_review(self):
-        return get_object_or_404(Review, pk=self.kwargs.get('review_id'))
+    def _get_review(self):
+        return get_object_or_404(
+            Review, pk=self.kwargs.get('review_id'),
+            title_id=self.kwargs.get('title_id')
+        )
 
     def get_queryset(self):
-        return self.get_review().comments.select_related('title', 'author')
+        return self._get_review().comments.select_related('title', 'author')
 
     def perform_create(self, serializer):
         serializer.save(
             author=self.request.user,
-            title=self.get_title(),
-            review=self.get_review(),
+            title=self._get_title(),
+            review=self._get_review(),
         )
